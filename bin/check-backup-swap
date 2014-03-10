@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Check to see if the backup disks have been changed recently
+
+. /usr/local/etc/backup.conf
+
+linkDate=`stat -c '%Z' $CURRENT_BACKUP`
+relDate=$(( ( `date +%s` - `date -d @"$linkDate" +%s` ) / ( 60 * 60 * 24 ) ))
+linkTarget=`readlink $CURRENT_BACKUP`
+if [ $relDate -gt $CHANGE_WARN_AFTER ] ; then
+  echo -e "The backup disk was last changed $relDate days ago, on $linkDate\nThe current backup disk is disk number $linkTarget\n\nYou need to:\n  - leave disk $linkTarget plugged in\n  - disconnect the other disk if it is still connected.\n  -(re)connect a new backup disk\n  - wait for the files to be copied from disk $linkTarget to the new disk.\n\nYou will get an email once the files have been copied across.\n"\
+  | mail -s "Backups need changing" $MAILTO
+fi
+

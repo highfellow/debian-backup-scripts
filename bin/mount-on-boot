@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# script to mount backup disk on boot.
+# disk must have a title like USBBACKUP[n]
+
+. /usr/local/etc/backup.conf
+
+diskno=`readlink $CURRENT_BACKUP`
+mount=$BACKUPS_DIR/$diskno
+
+for dev in /dev/sd?; do
+    if [ "`e2label ${dev}1`" == "$VOLUME_LABEL$diskno" ] ; then
+	echo $dev
+	mount ${dev}1 $mount
+	break
+    fi
+done

@@ -1,0 +1,52 @@
+#!/bin/bash
+
+. /usr/local/etc/backup.conf
+
+# unmount auto mount for this device
+if mount | grep -q $DEVNAME; then
+  umount $DEVNAME
+fi
+
+label=`e2label $DEVNAME`
+
+# mount the disk in /backup
+echo "mounting new disk"
+num=${label##$VOLUME_LABEL}
+mount=$BACKUPS_DIR/$num
+mkdir -p $mount
+if ! mount $DEVNAME $mount ; then
+  echo "Could not mount new disk"
+  exit 1
+fi
+
+# check another disk is mounted on /backup/current
+currentNo=`readlink $CURRENT_BACKUP`
+current=$BACKUPS_DIR/$currentNo
+if mount | grep -q $current && [ "$current" != "$mount" ]; then
+  # mirror files across
+  echo "copying files from $CURRENT_BACKUP to $mount"
+  if rsync -aH --delete $TOPDIR $mount; then
+    echo "moving symlink to new disk"
+    rm -f $CURRENT_BACKUP
+    ln -s $num $CURRENT_BACKUP
+    echo "unmounting old disk from $current ..."
+    umount $current && echo "done."
+  else
+    echo "rsync mirror failed."
+    exit 2
+  fi
+else
+  echo "No current backup disk connected"
+  echo "Making current symlink to $BACKUPS_DIR/$num"
+  rm -f $CURRENT_BACKUP
+  ln -s $num $CURRENT_BACKUP
+  exit 3
+ fi
+
+# notify that disk swap has finished.
+echo
+echo Finished disk change.
+echo Current backup disk is number $num.
+echo Old backup disk is number $currentNo.
+echo You can now unplug disk number $currentNo.
+

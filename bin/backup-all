@@ -1,0 +1,76 @@
+#!/bin/bash
+#
+# backup-all - first do a decremental backup to the usb disk using rsync
+#              then backup to remote server
+#              exit code 0 is success, 1 is warning, 2 is fail
+
+. /usr/local/etc/backup.conf
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Start of program
+WARN=0
+
+function rsync-err {
+    errcode=$?
+    echo -n "Rsync error code: $errcode - "
+    if [ $errcode -eq 23 ] || [ $errcode -eq 24 ] ; then
+	echo "Transfer not complete"
+	WARN=1
+    else
+	echo
+	echo "Transfer failed"
+	date # log date and time.
+	exit 2
+    fi
+}
+
+# First check if the disk is mounted, and has the right top level dir.
+
+echo "Starting backup."
+date # log date and time
+echo
+
+REALMOUNT=$BACKUPS_DIR/`readlink $CURRENT_BACKUP`
+if ! mount | grep -q $REALMOUNT; then
+    echo "Backup device not mounted."
+    exit 2
+fi
+
+mkdir -p $TOPDIR || exit 1
+
+# Next remove the oldest directory and rename the previous ones to move them up a day.
+echo -e "Removing old backups"
+cd $TOPDIR || exit 1
+if [ -d $KEEP_DAYS ] ; then
+    rm -rf $KEEP_DAYS
+fi
+n=$KEEP_DAYS
+while [ $n -gt 0 ] ; do
+    if [ -d $(( $n - 1 )) ] ; then
+	mv $(( $n - 1 )) $n
+    fi
+    n=$(( $n - 1 ))
+done
+
+# Now use rsync to copy todays files to directory 0
+
+echo -e "\nCopying files in $SOURCEDIR"
+if [ ! -d ./1 ] ; then mkdir ./1 ; fi
+rsync $RSYNCFLAGS --links --delete --link-dest=../1 $SOURCEDIR ./0 || rsync-err
+
+echo -e "\nCopying files in $ONCEDIR"
+{ rsync $RSYNCFLAGS --copy-dirlinks -b --delete --backup-dir=once.bak $ONCEDIR once || rsync-err ; } | grep -v '^skipping non-regular file'
+
+echo -e "\nDisk space:"
+df -h $TOPDIR
+
+if [ `df $TOPDIR | tail -n1 | tr -s ' '| cut -f4 -d' '` -lt $DISKWARNING ] ; then
+    echo "* Warning - low disk space *"
+    WARN=1
+fi
+
+echo
+echo "Backup finished."
+date # log date and time
+exit $WARN

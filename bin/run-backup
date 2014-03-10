@@ -1,0 +1,41 @@
+#!/bin/bash
+#
+# run-backup - calls any scripts needed to do a backup.
+#              also deals with logging and mailing results
+#
+
+. /usr/local/etc/backup.conf
+
+# first run the archiving script and mail the results
+
+#/usr/local/bin/store-archives | mail -E -s "archiving files" $MAILTO
+
+# then run the backup script $RETRIES times.
+i=$RETRIES
+while [ $i -gt 0 ] ; do
+    # run the backup script and test exit status
+    STATUS='OK'
+
+    # rotate logs first.
+    logrotate -f -s /var/lib/logrotate/backup-status /usr/local/etc/logrotate-backup.conf
+
+    # now run the backup script once.
+    /usr/local/bin/backup-all > $LOGFILE 2>&1
+    err=$? # test for errors.
+    if [ $err -eq 1 ] ; then
+        STATUS='WARNING'
+    elif [ $err -eq 2 ] ; then
+        STATUS='ERROR'
+    fi
+    
+    # create the email file
+    subject="Debian server backup log ($STATUS)"
+    cat $LOGFILE > $TMPFILE
+    # send the emails
+    mail -s "$subject" $MAILTO < $TMPFILE
+    if [ "$STATUS" == "OK" ] ; then 
+	      break # backup succeeded so don't retry.
+    fi
+    i=$(( $i - 1 ))
+    sleep $RETRYWAIT
+done

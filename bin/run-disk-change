@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# call the disk change script, and mail the output to somebody(s)
+
+. /usr/local/etc/backup.conf
+
+/usr/local/bin/disk-change 2>&1 | tee /var/log/disk-change.log | mail -s "disk change complete" $MAILTO
