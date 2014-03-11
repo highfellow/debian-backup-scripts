@@ -5,7 +5,7 @@ These are some scripts I wrote for keeping rotating backups of a debian server. 
 
 The scripts mirror a set of files under a source directory to a local usb disk every night, using rsync with its --link-dest option, which creates a series of daily backups in separate directories, where duplicate files between days are stored as hard links to the same inode. 
 
-This means that each day's backup appears as a complete archive of that day's data, but disk space is only used for unique revisions of a given file. Unlike a normal master / incremental backup system, there is no need to re-do the master backup regularly - the current day's backups are always a full copy. See: (http://www.mikerubel.org/computers/rsync_snapshots/) for more information.
+This means that each day's backup appears as a complete archive of that day's data, but disk space is only used for unique revisions of a given file. Unlike a normal master plus incremental backup system, there is no need to re-do the master backup regularly - the current day's backups are always a full copy. See: (http://www.mikerubel.org/computers/rsync_snapshots/) for more information.
 
 The other part of the system allows you to rotate the backup disk media at intervals, so that one copy can be kept off site. The way this works is that when you plug in a new usbdisk whose volume label is with 'USBBACKUP' plus a disk number, this is automatically mounted and the files from the current disk transferred to it. Once this is finished, the admin(s) get an email and the current disk can be unplugged.
 
@@ -16,7 +16,7 @@ The main things you need to do to set this up are:
   - make sure all the files you want to archive as daily snapshots are kept under a single directory. You can use symlinks to do this if they aren't arranged that way already.
   - you can also have another directory for files which only need to be archived once (no snapshots). E.g. a git repository.
   - create a top level directory to be the mount point for the backup disks. E.g. '/backup'.
-  - get two or more usb hard drives to use as backup drives, and label these with the volume label 'USBBACKUP<n>' where <n> is the number of the disk in the sequence. It's a good idea to put sticky labels on them with the disk number.
+  - get two or more usb hard drives to use as backup drives, and label these with the volume label 'USBBACKUPx' where x is the number of the drive in the sequence. It's a good idea to put sticky labels on the drives with the drive number.
   - copy or symlink all the files from bin/ and etc/ to /usr/local/(bin|etc).
   - symlink /usr/local/etc/80-usb-backup.rules to be in /etc/udev/rules.d, and do 'service udev restart' to add this rule to the udev database.
   - symlink /usr/local/bin/check-backup-swap to be in /etc/cron.daily. (This will email you when the disks need rotating).
