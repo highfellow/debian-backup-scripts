@@ -1,1 +1,1 @@
-KERNEL=="sd?1", SUBSYSTEM=="block", ENV{ID_BUS}=="usb", ENV{ID_FS_LABEL}=="USBBACKUP*", RUN+="/usr/local/bin/udev-backup.sh"
+KERNEL=="sd?1", ENV{SUBSYSTEM}=="block", ENV{ID_PATH}=="*usb*", ENV{ID_FS_LABEL}=="USBBACKUP*", RUN+="/usr/local/bin/udev-backup.sh"

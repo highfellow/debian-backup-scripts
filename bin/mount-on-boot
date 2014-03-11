@@ -9,9 +9,9 @@ diskno=`readlink $CURRENT_BACKUP`
 mount=$BACKUPS_DIR/$diskno
 
 for dev in /dev/sd?; do
-    if [ "`e2label ${dev}1`" == "$VOLUME_LABEL$diskno" ] ; then
-	echo $dev
-	mount ${dev}1 $mount
-	break
-    fi
+  if [ "`e2label ${dev}1`" == "$VOLUME_LABEL$diskno" ] ; then
+    echo $dev
+	  mount ${dev}1 $mount
+	  break
+  fi
 done
