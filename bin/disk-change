@@ -2,6 +2,8 @@
 
 . /usr/local/etc/backup.conf
 
+touch $CHANGE_LOCK # create lock file.
+
 # unmount auto mount for this device
 if mount | grep -q $DEVNAME; then
   umount $DEVNAME
@@ -16,6 +18,7 @@ mount=$BACKUPS_DIR/$num
 mkdir -p $mount
 if ! mount $DEVNAME $mount ; then
   echo "Could not mount new disk"
+  rm $CHANGE_LOCK
   exit 1
 fi
 
@@ -33,6 +36,7 @@ if mount | grep -q $current && [ "$current" != "$mount" ]; then
     umount $current && echo "done."
   else
     echo "rsync mirror failed."
+    rm $CHANGE_LOCK
     exit 2
   fi
 else
@@ -40,6 +44,7 @@ else
   echo "Making current symlink to $BACKUPS_DIR/$num"
   rm -f $CURRENT_BACKUP
   ln -s $num $CURRENT_BACKUP
+  rm $CHANGE_LOCK
   exit 3
  fi
 
@@ -49,4 +54,5 @@ echo Finished disk change.
 echo Current backup disk is number $num.
 echo Old backup disk is number $currentNo.
 echo You can now unplug disk number $currentNo.
+rm $CHANGE_LOCK
 

@@ -6,8 +6,9 @@
 
 # following lines are for testing the udev rule.
 #echo "---------------------" >> /tmp/udev-backup
-#env >> /tmp/udev-backup
 #echo $ACTION >> /tmp/udev-backup
+#env >> /tmp/udev-backup
+#exit
 
 if [ "$ACTION" == "add" ] ; then
   # kick off the disk-change script

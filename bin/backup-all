@@ -25,19 +25,31 @@ function rsync-err {
     fi
 }
 
+# don't run backup if disk change in progress.
+if stat $CHANGE_LOCK > /dev/null 2>&1; then
+  echo "Disk change in progress - not backing up."
+  exit 1
+fi
+
 # First check if the disk is mounted, and has the right top level dir.
 
 echo "Starting backup."
 date # log date and time
 echo
 
-REALMOUNT=$BACKUPS_DIR/`readlink $CURRENT_BACKUP`
-if ! mount | grep -q $REALMOUNT; then
-    echo "Backup device not mounted."
-    exit 2
+if ! stat $CURRENT_BACKUP > /dev/null 2>&1 ; then
+  echo 'backups disabled - no current link'
+  exit 1
 fi
 
-mkdir -p $TOPDIR || exit 1
+REALMOUNT=$BACKUPS_DIR/`readlink $CURRENT_BACKUP`
+if ! mount | grep -q $REALMOUNT; then
+  echo "Backup device not mounted."
+  exit 2
+fi
+
+# create directory structure if needed.
+mkdir -p $TOPDIR/0 || exit 1
 
 # Next remove the oldest directory and rename the previous ones to move them up a day.
 echo -e "Removing old backups"
@@ -57,7 +69,7 @@ done
 
 echo -e "\nCopying files in $SOURCEDIR"
 if [ ! -d ./1 ] ; then mkdir ./1 ; fi
-rsync $RSYNCFLAGS --links --delete --link-dest=../1 $SOURCEDIR ./0 || rsync-err
+rsync $RSYNCFLAGS --copy-links --delete --link-dest=../1 $SOURCEDIR ./0 || rsync-err
 
 echo -e "\nCopying files in $ONCEDIR"
 { rsync $RSYNCFLAGS --copy-dirlinks -b --delete --backup-dir=once.bak $ONCEDIR once || rsync-err ; } | grep -v '^skipping non-regular file'
