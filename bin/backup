@@ -1,0 +1,116 @@
+#!/bin/bash
+#
+# 
+
+. /usr/local/etc/backup.conf
+
+finish () {
+  # leave the script, and print and log a message.
+  ERR="$1"
+  MESSAGE="$2"
+  if [ "$MESSAGE" == "" ] ; then
+    MESSAGE="Bye bye."
+  fi
+  echo "$MESSAGE"
+  echo "`date` - $MESSAGE" >$SUMMARYFILE
+  exit $ERR
+}
+
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Start of program
+WARN=0
+EXITMSG="Eek!"
+
+# set some defaults
+NIGHTLIES=8
+WEEKLIES=5
+MONTHLIES=12
+
+echo "Starting backup."
+date # log date and time
+echo
+
+DATESECS=`date +%s`
+
+# First check if the disk is mounted, and has the right top level dir.
+
+mount | grep -q $BACKUP_D || finish 2 "Backup device not mounted."
+
+# create directory structure if needed.
+cd $BACKUP_D
+mkdir -p nightly weekly monthly once || finish 2 "Can't make backup directories"
+
+# find last nightly backup, if it exists.
+LASTNIGHTLY=`ls nightly | tail -n 1`
+if [ "$LASTNIGHTLY" == "" ] ; then
+  LASTNIGHTLY=1970-01-01-00-00-00
+  mkdir nightly/$LASTNIGHTLY
+fi
+NEWNIGHTLY=`date -d @$DATESECS +%Y-%m-%d-%H-%M-%S`
+
+# Now use rsync to copy todays files to new nightly directory
+
+#echo -e "\nCopying files from $RSYNC_SRC_ONCE"
+#rsync $RSYNCFLAGS --copy-dirlinks -b --delete $RSYNC_SRC_ONCE once
+#echo
+
+echo -e "\nCopying files from $RSYNC_SRC_ALL"
+echo "Linking files from $BACKUP_D/nightly/$LASTNIGHTLY. New backup in $BACKUP_D/nightly/$NEWNIGHTLY."
+rsync $RSYNCFLAGS --update --delete --link-dest=$BACKUP_D/nightly/$LASTNIGHTLY $RSYNC_SRC_ALL nightly/$NEWNIGHTLY
+case $? in
+  (20|23|24)
+    # transfer interrupted or incomplete.
+    # hard-link remaining files into the new nightly dir.
+    cp -rnl nightly/$LASTNIGHTLY nightly/$NEWNIGHTLY
+    WARN=1
+    EXITMSG="Transfer incomplete."
+    ;;
+  (0)
+    # success.
+    EXITMSG="Transfer complete."
+    ;;
+  (*)
+    # other error - delete bad copy.
+    rm -rf nightly/$NEWNIGHTLY
+    finish 2 "Transfer failed."
+    ;;
+esac
+
+# check whether the latest file in the weekly/monthly dir has week/month not
+# equal to the current date.
+LASTWEEKLY=`ls weekly|tail -n 1`
+if [ "$LASTWEEKLY" == "" ] || [ `date -r weekly/$LASTWEEKLY +%W` != `date -d @$DATESECS +%W` ] ; then
+  # yes so hard link a copy to the weekly directory.
+  echo "creating weekly."
+  cp -rl nightly/$NEWNIGHTLY weekly  
+fi
+LASTMONTHLY=`ls monthly|tail -n 1`
+if [ "$LASTMONTHLY" == "" ] || [ `date -r monthly/$LASTMONTHLY +%m` != `date -d @$DATESECS +%m` ] ; then
+  # yes so hard link a copy to the weekly directory.
+  echo "creating monthly."
+  cp -rl nightly/$NEWNIGHTLY monthly
+fi
+
+# remove superfluous copies from nightly/weekly/monthly directories.
+echo -e "\nRemoving out of date copies"
+cd $BACKUP_D/nightly || exit 3
+ls -r | tail -n +$(( $NIGHTLIES + 1 )) | xargs rm -rf
+cd $BACKUP_D/weekly || exit 3
+ls -r | tail -n +$(( $WEEKLIES + 1 )) | xargs rm -rf
+cd $BACKUP_D/monthly || exit 3
+ls -r | tail -n +$(( $MONTHLIES + 1 )) | xargs rm -rf
+cd $BACKUP_D
+
+echo -e "\nDisk space:"
+df -h
+
+if [ `df | tail -n1 | tr -s ' '| cut -f4 -d' '` -lt $DISKWARNING ] ; then
+    EXITMSG="$EXITMSG Warning - low disk space."
+    WARN=1
+fi
+
+echo
+echo "Backup finished."
+date # log date and time
+finish $WARN "$EXITMSG"

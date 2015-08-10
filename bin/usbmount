@@ -1,0 +1,38 @@
+#!/bin/bash
+#
+# script to automount usb disks.
+#
+
+. /usr/local/etc/backup.conf
+
+DEVINFO=$(/sbin/blkid -p $DEVNAME)
+FSTYPE=$(echo "$DEVINFO"  | sed 's/.*TYPE="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
+UUID=$(echo "$DEVINFO"  | sed 's/.*UUID="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
+LABEL=$(echo "$DEVINFO"  | sed 's/.*LABEL="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
+
+case $ACTION in
+  (add)
+    if [ "${LABEL#$VOLUME_LABEL}" != "$LABEL" ] && ! mount | grep $BACKUP_D ; then
+      # it's a usb backup disk (and no other is mounted).
+      MOUNT=$BACKUP_D
+    else
+      # otherwise automount it under /media.
+      if [ "$LABEL" != "" ] ; then
+        MOUNT=/media/$LABEL
+      else
+        MOUNT=/media/$UUID
+      fi
+    fi
+    MOUNT=${MOUNT// /_}
+    mkdir -p $MOUNT
+    mount -t $FSTYPE $DEVNAME $MOUNT
+    ;;
+  (remove)
+    MOUNT=`mount|grep $DEVNAME|cut -f3 -d' '`
+    umount $DEVNAME
+    if [ "$MOUNT" != "$BACKUP_D" ] ; then
+      rmdir $MOUNT
+    fi
+    ;;
+esac
+

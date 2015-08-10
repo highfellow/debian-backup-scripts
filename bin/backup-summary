@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# Mail a summary of the last week's backup results to the relevant people.
+#
+
+. /usr/local/etc/backup.conf
+
+cat $SUMMARYFILE | mail -s "Backup summary" $MAILTO
+rm $SUMMARYFILE
