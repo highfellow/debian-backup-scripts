@@ -1,0 +1,12 @@
+#!/bin/bash
+#
+# script to end an in-progress backup session. This is meant to be scheduled
+# some hours after the nightly backup runs, so as to prevent it running over
+# into the next day and hogging bandwidth.
+
+# check whether there is an rsync job running, and if so kill it.
+pkill rsync # kill the first one. (May be the 'once' job.)
+sleep 60
+pkill rsync # kill the second one if it runs.  
+
+# the backup script should take care of everything else.
