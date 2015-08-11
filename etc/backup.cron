@@ -1,0 +1,20 @@
+# /etc/crontab: system-wide crontab
+# Unlike any other crontab you don't have to run the `crontab'
+# command to install the new version when you edit this file
+# and files in /etc/cron.d. These files also have username fields,
+# that none of the other crontabs do.
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# m h dom mon dow user	command
+
+# nightly backup job.
+30 0 * * * root /usr/local/bin/backup
+
+# end backup job if it overruns.
+30 8 * * * root /usr/local/bin/end-backup
+
+# mail a weekly summary to relevant people.
+0 10 * * 0 root /usr/local/bin/backup-summary
+

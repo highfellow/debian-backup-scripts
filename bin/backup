@@ -57,12 +57,13 @@ NEWNIGHTLY=`date -d @$DATESECS +%Y-%m-%d-%H-%M-%S`
 
 echo -e "\nCopying files from $RSYNC_SRC_ALL"
 echo "Linking files from $BACKUP_D/nightly/$LASTNIGHTLY. New backup in $BACKUP_D/nightly/$NEWNIGHTLY."
-rsync $RSYNCFLAGS --update --delete --link-dest=$BACKUP_D/nightly/$LASTNIGHTLY $RSYNC_SRC_ALL nightly/$NEWNIGHTLY
+rsync $RSYNCFLAGS --delete --link-dest=$BACKUP_D/nightly/$LASTNIGHTLY $RSYNC_SRC_ALL nightly/$NEWNIGHTLY
 case $? in
-  (20|23|24)
-    # transfer interrupted or incomplete.
-    # hard-link remaining files into the new nightly dir.
-    cp -rnl nightly/$LASTNIGHTLY nightly/$NEWNIGHTLY
+  (12|20|23|24)
+    # transfer interrupted or incomplete, or other recoverable error.
+    # hard-link remaining files into the new nightly dir. (so they're not
+    # missing on the next run).
+    cp -rnl nightly/$LASTNIGHTLY/* nightly/$NEWNIGHTLY
     WARN=1
     EXITMSG="Transfer incomplete."
     ;;
