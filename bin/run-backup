@@ -5,5 +5,9 @@
 
 . /usr/local/etc/backup.conf
 
-nohup /usr/local/bin/backup >>$LOGFILE 2>&1 </dev/null &
+logrotate /usr/local/etc/backup.logrotate
+
+echo "New run at: `date`">>$ERRFILE
+/usr/local/bin/backup >>$LOGFILE 2>>$ERRFILE </dev/null 
 echo -e "\n\n" >>$LOGFILE
+echo -e "\n\n" >>$ERRFILE

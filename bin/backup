@@ -12,7 +12,7 @@ finish () {
     MESSAGE="Bye bye."
   fi
   echo "$MESSAGE"
-  echo "`date` - $MESSAGE" >$SUMMARYFILE
+  echo "`date` - $MESSAGE" >>$SUMMARYFILE
   exit $ERR
 }
 
@@ -58,11 +58,14 @@ NEWNIGHTLY=`date -d @$DATESECS +%Y-%m-%d-%H-%M-%S`
 echo -e "\nCopying files from $RSYNC_SRC_ALL"
 echo "Linking files from $BACKUP_D/nightly/$LASTNIGHTLY. New backup in $BACKUP_D/nightly/$NEWNIGHTLY."
 rsync $RSYNCFLAGS --delete --link-dest=$BACKUP_D/nightly/$LASTNIGHTLY $RSYNC_SRC_ALL nightly/$NEWNIGHTLY
-case $? in
-  (12|20|23|24)
+ERR=$?
+echo "Rsync finished - exit code $ERR."
+case $ERR in
+  (20|23|24)
     # transfer interrupted or incomplete, or other recoverable error.
     # hard-link remaining files into the new nightly dir. (so they're not
     # missing on the next run).
+    echo "Incomplete transfer - adding missing files."
     cp -rnl nightly/$LASTNIGHTLY/* nightly/$NEWNIGHTLY
     WARN=1
     EXITMSG="Transfer incomplete."
@@ -83,13 +86,13 @@ esac
 LASTWEEKLY=`ls weekly|tail -n 1`
 if [ "$LASTWEEKLY" == "" ] || [ `date -r weekly/$LASTWEEKLY +%W` != `date -d @$DATESECS +%W` ] ; then
   # yes so hard link a copy to the weekly directory.
-  echo "creating weekly."
+  echo -e "\ncreating weekly."
   cp -rl nightly/$NEWNIGHTLY weekly  
 fi
 LASTMONTHLY=`ls monthly|tail -n 1`
 if [ "$LASTMONTHLY" == "" ] || [ `date -r monthly/$LASTMONTHLY +%m` != `date -d @$DATESECS +%m` ] ; then
   # yes so hard link a copy to the weekly directory.
-  echo "creating monthly."
+  echo -e "\ncreating monthly."
   cp -rl nightly/$NEWNIGHTLY monthly
 fi
 

@@ -6,4 +6,4 @@
 . /usr/local/etc/backup.conf
 
 cat $SUMMARYFILE | mail -s "Backup summary" $MAILTO
-rm $SUMMARYFILE
+echo -e "Summary of this week's backup runs.\n" > $SUMMARYFILE
