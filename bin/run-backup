@@ -1,13 +1,12 @@
 #!/bin/bash
 #
-# run-backup - calls the backup script and logs outut to logfile.
+# run-backup - calls the backup script and logs output to logfile.
 #
 
 . /usr/local/etc/backup.conf
 
 logrotate /usr/local/etc/backup.logrotate
 
-echo "New run at: `date`">>$ERRFILE
+touch /usr/local/etc/backup.err.ref
 /usr/local/bin/backup >>$LOGFILE 2>>$ERRFILE </dev/null 
 echo -e "\n\n" >>$LOGFILE
-echo -e "\n\n" >>$ERRFILE

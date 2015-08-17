@@ -11,7 +11,14 @@ finish () {
   if [ "$MESSAGE" == "" ] ; then
     MESSAGE="Bye bye."
   fi
-  echo "$MESSAGE"
+  if [ $ERR -eq 1 ] ; then
+    # compare error file to reference.
+    if [ `md5sum $ERRFILE | cut -d ' ' -f1` == `md5sum /usr/local/etc/backup.err.ref | cut -d ' ' -f1` ] ; then
+      ERR=0
+      MESSAGE="Backup complete"
+    fi
+  fi
+  echo "Exiting: $MESSAGE"
   echo "`date` - $MESSAGE" >>$SUMMARYFILE
   exit $ERR
 }
