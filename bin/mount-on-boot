@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # script to mount backup disk on boot.
-exit 1
 
 case $1 in
   (start)

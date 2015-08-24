@@ -15,7 +15,7 @@ finish () {
     # compare error file to reference.
     if [ `md5sum $ERRFILE | cut -d ' ' -f1` == `md5sum /usr/local/etc/backup.err.ref | cut -d ' ' -f1` ] ; then
       ERR=0
-      MESSAGE="Backup complete"
+      MESSAGE="Transfer complete"
     fi
   fi
   echo "Exiting: $MESSAGE"
@@ -58,10 +58,12 @@ NEWNIGHTLY=`date -d @$DATESECS +%Y-%m-%d-%H-%M-%S`
 
 # Now use rsync to copy todays files to new nightly directory
 
-#echo -e "\nCopying files from $RSYNC_SRC_ONCE"
-#rsync $RSYNCFLAGS --copy-dirlinks -b --delete $RSYNC_SRC_ONCE once
-#echo
+# first do the ones which are only backed up once.
+echo -e "\nCopying files from $RSYNC_SRC_ONCE"
+rsync $RSYNCFLAGS --copy-dirlinks -b --delete $RSYNC_SRC_ONCE once
+echo
 
+# then everything else which gets a snapshot every night.
 echo -e "\nCopying files from $RSYNC_SRC_ALL"
 echo "Linking files from $BACKUP_D/nightly/$LASTNIGHTLY. New backup in $BACKUP_D/nightly/$NEWNIGHTLY."
 rsync $RSYNCFLAGS --delete --link-dest=$BACKUP_D/nightly/$LASTNIGHTLY $RSYNC_SRC_ALL nightly/$NEWNIGHTLY

@@ -6,10 +6,12 @@
 . /usr/local/etc/backup.conf
 
 DEVINFO=$(/sbin/blkid -p $DEVNAME)
-FSTYPE=$(echo "$DEVINFO"  | sed 's/.*TYPE="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
-UUID=$(echo "$DEVINFO"  | sed 's/.*UUID="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
-LABEL=$(echo "$DEVINFO"  | sed 's/.*LABEL="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
+FSTYPE=$(echo "$DEVINFO"  | sed 's/.* TYPE="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
+UUID=$(echo "$DEVINFO"  | sed 's/.* UUID="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
+LABEL=$(echo "$DEVINFO"  | sed 's/.* LABEL="\([^"]*\)".*/\1/g; s/[[:blank:]]*//g;')
 
+{
+echo $DEVNAME $ACTION > /tmp/usbmount
 case $ACTION in
   (add)
     if [ "${LABEL#$VOLUME_LABEL}" != "$LABEL" ] && ! mount | grep $BACKUP_D ; then
@@ -35,4 +37,4 @@ case $ACTION in
     fi
     ;;
 esac
-
+} > /tmp/usbmount 2>&1
