@@ -5,5 +5,5 @@
 
 . /usr/local/etc/backup.conf
 
-cat $SUMMARYFILE | mail -s "Backup summary" $MAILTO
+cat $SUMMARYFILE | mail -s "Backup summary for `hostname`" $MAILTO
 echo -e "Summary of this week's backup runs.\n" > $SUMMARYFILE
