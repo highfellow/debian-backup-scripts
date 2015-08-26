@@ -5,5 +5,7 @@
 
 . /usr/local/etc/backup.conf
 
+
+echo -e "\nDisk usage.\n-----------\n`df -h`" >> $SUMMARYFILE
 cat $SUMMARYFILE | mail -s "Backup summary for `hostname`" $MAILTO
 echo -e "Summary of this week's backup runs.\n" > $SUMMARYFILE
