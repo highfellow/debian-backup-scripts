@@ -6,6 +6,14 @@
 . /usr/local/etc/backup.conf
 
 
-echo -e "\nDisk usage.\n-----------\n`df -h`" >> $SUMMARYFILE
+echo -e "\nDisk usage\n----------\n`df -h`" >> $SUMMARYFILE
+
+if mount | grep -q $BACKUP_D; then
+  echo -e "\nBy directory\n------------\n" >> $SUMMARYFILE
+  cd $BACKUP_D
+  for d in nightly/* weekly/* once; do
+    du -s $d >> $SUMMARYFILE
+  done
+fi
 cat $SUMMARYFILE | mail -s "Backup summary for `hostname`" $MAILTO
 echo -e "Summary of this week's backup runs.\n" > $SUMMARYFILE
