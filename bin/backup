@@ -74,10 +74,15 @@ case $ERR in
     # transfer interrupted or incomplete, or other recoverable error.
     # hard-link remaining files into the new nightly dir. (so they're not
     # missing on the next run).
-    echo "Incomplete transfer - adding missing files."
-    cp -rnl nightly/$LASTNIGHTLY/* nightly/$NEWNIGHTLY
-    WARN=1
-    EXITMSG="Transfer incomplete."
+    if [ `md5sum $ERRFILE|cut -f1 -d' '` == `md5sum $REFFILE|cut -f1 -d' '` ]; then
+      echo "Incomplete transfer - adding missing files."
+      cp -rnl nightly/$LASTNIGHTLY/* nightly/$NEWNIGHTLY
+      WARN=1
+      EXITMSG="Transfer incomplete."
+    else
+      # success. (known error).
+      EXITMSG="Transfer complete (known errors)."
+    fi
     ;;
   (0)
     # success.
